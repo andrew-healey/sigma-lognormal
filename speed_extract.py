@@ -178,3 +178,37 @@ def extract_sigma_lognormal(point_combo,points):
 	lognormal = speed_lognormal
 
 	return lognormal
+
+def get_stroke_combos(stroke_candidate):
+	p1=stroke_candidate[0]
+	p2s=stroke_candidate[1]
+	p3=stroke_candidate[2]
+	p4s=stroke_candidate[3]
+	p5=stroke_candidate[4]
+
+	ret = []
+	for p2 in p2s:
+		for p4 in p4s:
+			ret.append([p1,p2,p3,p4,p5])
+	
+	return ret
+
+# Input type Signal
+# Output type LognormalStroke[]
+def extract_all_lognormals(signal):
+	stroke_candidates = mark_stroke_candidates(signal) # StrokePoints[n]
+	point_combos = [get_point_combos(candidate) for candidate in stroke_candidates] # Point[2][n]
+	stroke_combos = [get_stroke_combos(candidate) for candidate in stroke_candidates] # Point[5][n]
+
+	lognormals = []
+
+	for candidate_idx in range(len(stroke_candidates)):
+		pairs = point_combos[candidate_idx] # Point[2][n]
+		strokes = stroke_combos[candidate_idx] # Point[5][n]
+
+		for pair in pairs:
+			for stroke in strokes:
+				lognormal = extract_sigma_lognormal(pair,stroke)
+				lognormals.append(lognormal)
+	
+	return lognormals
