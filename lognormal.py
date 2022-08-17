@@ -1,4 +1,4 @@
-from signal import Signal
+from signals import Signal
 import numpy as np
 from scipy import special
 
@@ -20,7 +20,7 @@ class LognormalStroke:
 	def time_param(self,time):
 		delta=time-self.t_0
 		ret=(np.log(delta)-self.mu)/(np.sqrt(2)*self.sigma)
-		nans_fixed=np.nan_to_num(ret,num=np.NINF)
+		nans_fixed=np.nan_to_num(ret,nan=np.NINF)
 		return nans_fixed
 	def fraction_done(self,time):
 		time_param=self.time_param(time)
@@ -59,4 +59,7 @@ class LognormalStroke:
 		speed=self.speed(time)
 
 		return Signal(position,velocity,angle,speed,time)
+	
+	def __str__(self) -> str:
+		return "LognormalStroke(D={},t_0={},mu={},sigma={},theta_s={},theta_f={})".format(self.D,self.t_0,self.mu,self.sigma,self.theta_s,self.theta_f)
 

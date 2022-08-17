@@ -64,7 +64,7 @@ def get_angle(vels):
 	smooth_angle=np.cumsum( np.concatenate((raw_angle[:1],smooth_delta)))
 	return smooth_angle
 
-from signal import Signal
+from signals import Signal
 
 def preprocess(locs):
 	resampled = resample(locs)

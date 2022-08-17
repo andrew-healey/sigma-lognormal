@@ -1,5 +1,5 @@
 import numpy as np
-from signal import Signal
+from signals import Signal
 from action_plan import ActionPlan
 
 from speed_extract import extract_all_lognormals

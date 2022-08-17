@@ -11,6 +11,9 @@ class Point:
 		self.speed=signal.speed[idx]
 
 		self.idx=idx
+	def __str__(self) -> str:
+		# Display role, index, time, speed, angle.
+		return "Point(role={},idx={},time={},speed={},angle={})".format(self.role,self.idx,self.time,self.speed,self.angle)
 
 def sign(num):
 	return 1 if num>0 else (0 if num==0 else -1)
@@ -20,16 +23,16 @@ from util import diff
 
 def mark_stroke_candidates(signal):
 
-	speed=signal.speed
+	speed_seq=signal.speed
 
-	ddspeed=diff(diff(speed))
+	ddspeed_seq=diff(diff(speed_seq,signal.time[1:]),signal.time[2:])
 
 	points=[[0,"low"]]
 
-	for _idx,speed in enumerate(speed[1:-1]):
+	for _idx,speed in enumerate(speed_seq[1:-1]):
 		idx=_idx+1
-		prev_speed=speed[idx-1]
-		next_speed=speed[idx+1]
+		prev_speed=speed_seq[idx-1]
+		next_speed=speed_seq[idx+1]
 		
 		is_local_max= speed>=prev_speed and speed>=next_speed
 		if(is_local_max):
@@ -39,15 +42,15 @@ def mark_stroke_candidates(signal):
 		if(is_local_min):
 			points.append([idx,"low"])
 		
-		ddspeed=ddspeed[_idx]
-		next_ddspeed=0 if _idx==len(ddspeed)-1 else ddspeed[_idx+1]
+		ddspeed=ddspeed_seq[_idx]
+		next_ddspeed=0 if _idx==len(ddspeed_seq)-1 else ddspeed_seq[_idx+1]
 		
 		changes_sign=sign(ddspeed) != sign(next_ddspeed)
 			
 		if(changes_sign):
 			points.append([idx,"flip"])
 
-	points.append([len(speed)-1,"low"])
+	points.append([len(speed_seq)-1,"low"])
 
 	lookup_str="".join([point[1][0] for point in points])
 
@@ -67,12 +70,13 @@ def mark_stroke_candidates(signal):
 
 		# type StrokePoints = [Point, Point[], Point, Point[], Point]
 		points=[
-			Point(one,signal,1),
-			[Point(two,signal,2) for two in twos],
-			Point(three,signal,3),
-			[Point(four,signal,4) for four in fours],
-			Point(five,signal,5)
+			Point(one[0],signal,1),
+			[Point(two[0],signal,2) for two in twos],
+			Point(three[0],signal,3),
+			[Point(four[0],signal,4) for four in fours],
+			Point(five[0],signal,5)
 		]
+		return points
 		
 	# Return type StrokePoints[]
 	return [get_points(stroke_idx,points) for stroke_idx in stroke_idxes]
@@ -154,7 +158,7 @@ def extract_sigma_lognormal(point_combo,points):
 	
 	def est_D(pt):
 		exponent = (( np.log(delta(pt)) - mu )**2) / (2*sigma_sq)
-		return pt.vel * sigma*np.sqrt(2*pi)*delta(pt) * np.exp( exponent )
+		return pt.speed * sigma*np.sqrt(2*np.pi)*delta(pt) * np.exp( exponent )
 	
 	D=avg(est_D(pa),est_D(pb))
 

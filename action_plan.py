@@ -1,5 +1,5 @@
 import numpy as np
-from signal import Signal
+from signals import Signal
 
 class ActionPlan:
 	def __init__(self,strokes,start_point):
