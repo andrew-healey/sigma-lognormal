@@ -54,9 +54,9 @@ class LognormalStroke:
 
 	def signal(self,time):
 		position=self.position(time)
-		velocity=self.velocity(time)
-		angle=self.angle(time)
-		speed=self.speed(time)
+		velocity=self.velocity(time)[:-1]
+		angle=self.angle(time)[:-1]
+		speed=self.speed(time)[:-1]
 
 		return Signal(position,velocity,angle,speed,time)
 	

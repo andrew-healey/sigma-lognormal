@@ -1,4 +1,5 @@
 import numpy as np
+np.seterr(all="ignore")
 
 class Point:
 	def __init__(self,idx,signal,role):
@@ -107,9 +108,14 @@ def get_point_combos(stroke_candidate):
 
 from lognormal import LognormalStroke
 
+
+# There's some mysterious bug in this code.
 def extract_sigma_lognormal(point_combo,points):
 	pa,pb = point_combo
 	p1,p2,p3,p4,p5 = points
+
+	if pa.speed <= 0 or pb.speed <= 0:
+		return None
 
 	ratio = pa.speed/pb.speed
 	l_ratio = np.log(ratio)
@@ -174,10 +180,10 @@ def extract_sigma_lognormal(point_combo,points):
 
 	# Extrapolate theta out to p1 and p5.
 	theta_s = p3.angle + delta_theta * (fraction_done(p1)-fraction_done(p3))
-	theta_e = p3.angle + delta_theta * (fraction_done(p5)-fraction_done(p3))
+	theta_f = p3.angle + delta_theta * (fraction_done(p5)-fraction_done(p3))
 
 	speed_lognormal.theta_s = theta_s
-	speed_lognormal.theta_e = theta_e
+	speed_lognormal.theta_f = theta_f
 
 	lognormal = speed_lognormal
 
@@ -197,6 +203,20 @@ def get_stroke_combos(stroke_candidate):
 	
 	return ret
 
+def is_valid(lognormal):
+	if lognormal is None:
+		return False
+	if any([not np.isfinite(param) for param in [
+		lognormal.D,
+		lognormal.t_0,
+		lognormal.mu,
+		lognormal.sigma,
+		lognormal.theta_s,
+		lognormal.theta_f
+	]]):
+		return False
+	return True
+
 # Input type Signal
 # Output type LognormalStroke[]
 def extract_all_lognormals(signal):
@@ -213,6 +233,7 @@ def extract_all_lognormals(signal):
 		for pair in pairs:
 			for stroke in strokes:
 				lognormal = extract_sigma_lognormal(pair,stroke)
-				lognormals.append(lognormal)
+				if is_valid(lognormal):
+					lognormals.append(lognormal)
 	
 	return lognormals

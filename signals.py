@@ -1,4 +1,5 @@
-from preprocess import get_angle,l2
+from preprocess import get_angle
+from util import l2
 
 class Signal:
 	position = []

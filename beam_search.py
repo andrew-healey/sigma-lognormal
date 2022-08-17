@@ -69,6 +69,8 @@ class BeamSearch:
 
 		while True:
 			new_plans = self.get_next_action_plans(plans)
+			print("Max. SNR:",self.snr(new_plans[0]))
+			print("Num. strokes:",len(new_plans[0].strokes))
 			if self.should_stop(plans,new_plans):
 				return new_plans[0]
 			plans = new_plans

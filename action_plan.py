@@ -8,7 +8,9 @@ class ActionPlan:
 	def signal(self,time):
 		lognormal_signals=[stroke.signal(time) for stroke in self.strokes]
 
-		combined_signal = sum(lognormal_signals)
-		combined_signal.position += self.start_point[np.newaxis,:].repeat(len(time),axis=0)
+		start_position = self.start_point[np.newaxis,:].repeat(len(time),axis=0)
+		full_signal=Signal(start_position,np.zeros((len(time)-1,2)),None,None,time)
 
-		return combined_signal
+		for lognormal_signal in lognormal_signals:
+			full_signal += lognormal_signal
+		return full_signal

@@ -69,13 +69,13 @@ from signals import Signal
 def preprocess(locs):
 	resampled = resample(locs)
 	smoothed=smooth(resampled)
-	padded=pad(smoothed)
+	#padded=pad(smoothed)
 
-	raw_vel=diff(padded)
+	raw_vel=diff(smoothed)
 
 	speed=l2(raw_vel)
 	smooth_speed=low_pass(speed,hz)
 
 	smooth_angle=get_angle(raw_vel)
 
-	return Signal(padded[:,:2],raw_vel[:,:2],smooth_angle,smooth_speed[:,0],padded[:,2])
+	return Signal(smoothed[:,:2],raw_vel[:,:2],smooth_angle,smooth_speed[:,0],smoothed[:,2])
