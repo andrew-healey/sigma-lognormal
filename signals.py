@@ -1,5 +1,6 @@
-from preprocess import get_angle
+from preprocess import get_angle,hz
 from util import l2
+from low_pass import low_pass
 
 class Signal:
 	position = []
@@ -21,7 +22,7 @@ class Signal:
 		if speed is not None:
 			self.speed = speed
 		else:
-			self.speed = l2(self.velocity) # NOTE: No smoothing here. Paper doesn't say to do it.
+			self.speed = low_pass(l2(self.velocity),hz)
 	
 	def __mul__(self,scalar):
 		position = self.position*scalar

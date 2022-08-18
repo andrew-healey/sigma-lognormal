@@ -16,10 +16,13 @@ cutoff_freq=15
 order=4
 
 from math import pi
-delay=1/(2*pi*cutoff_freq)
-def low_pass(sequence,hz):
+
+def low_pass_pre(sequence,hz):
     vals=sequence[:,0]
-    filtered=butter_lowpass_filter(vals,cutoff=cutoff_freq,fs=hz,order=order)
+    filtered=low_pass(vals,hz)
     
     length=sequence.shape[0]
     return np.concatenate((filtered.reshape((length,1)),sequence[:,1].reshape((length,1))),axis=1)
+
+def low_pass(sequence,hz):
+  return butter_lowpass_filter(sequence,cutoff=cutoff_freq,fs=hz,order=order)

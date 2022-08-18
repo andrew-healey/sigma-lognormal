@@ -53,7 +53,7 @@ def l2(sequence):
     mag=np.sqrt(sequence[:,0]**2+sequence[:,1]**2)
     return np.concatenate((mag.reshape((length,1)),sequence[:,2].reshape((length,1))),axis=1)
 
-from low_pass import low_pass
+from low_pass import low_pass_pre
 
 def get_angle(vels):
 	smoother_vels=smooth(vels,window=30)
@@ -74,7 +74,7 @@ def preprocess(locs):
 	raw_vel=diff(smoothed)
 
 	speed=l2(raw_vel)
-	smooth_speed=low_pass(speed,hz)
+	smooth_speed=low_pass_pre(speed,hz)
 
 	smooth_angle=get_angle(raw_vel)
 

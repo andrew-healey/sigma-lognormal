@@ -81,7 +81,7 @@ class BeamSearch:
 			next_action_plans += self.get_children(action_plan)
 		plan_making_timer("Plan making",len(next_action_plans),"plans")
 		sorted_plans = sorted(next_action_plans,key=lambda x: self.snr(x),reverse=True)
-		plan_making_timer("Sorting")
+		plan_making_timer("Plan sorting")
 		return sorted_plans[:self.beam_width]
 
 	def should_stop(self,old_plans,new_plans):
@@ -100,19 +100,15 @@ class BeamSearch:
 			ActionPlan([],self.signal.position[0])
 		]
 
-		perf_timer = timer()
 		num_strokes = 0
-
 		while True:
-			perf_timer("Start iter")
+			perf_timer = timer()
 			new_plans = self.get_next_action_plans(plans)
 			num_strokes+=1
-			perf_timer("Got children plans")
 			print("Max. SNR:",self.snr(new_plans[0]))
 			print("Num. strokes:",num_strokes)
 			if self.should_stop(plans,new_plans):
 				return new_plans[0]
-			perf_timer("Stop check")
 			plans = new_plans
 
 			# Clear all old SNR cache entries.
