@@ -10,3 +10,8 @@ def plot_velocities(signals):
 	for signal in signals:
 		plt.scatter(signal.velocity[:,0],-signal.velocity[:,1])
 	plt.show()
+
+def plot_speeds(signals):
+	for signal in signals:
+		plt.scatter(signal.time[1:],signal.speed)
+	plt.show()

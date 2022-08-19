@@ -154,10 +154,13 @@ def extract_sigma_lognormal(point_combo,points):
 	def est_t_0(pt):
 		return pt.time - exp_mu * calc_a(pt)
 	
-	def avg(a,b):
+	def decide(a,b):
+		# Just use the first estimate.
+		#return a
+		# Average the two estimates.
 		return (a+b)/2
 	
-	t_0 = avg(est_t_0(pa),est_t_0(pb))
+	t_0 = decide(est_t_0(pa),est_t_0(pb))
 
 	def delta(pt):
 		return pt.time - t_0
@@ -166,13 +169,17 @@ def extract_sigma_lognormal(point_combo,points):
 		exponent = (( np.log(delta(pt)) - mu )**2) / (2*sigma_sq)
 		return pt.speed * sigma*np.sqrt(2*np.pi)*delta(pt) * np.exp( exponent )
 	
-	D=avg(est_D(pa),est_D(pb))
+	D=decide(est_D(pa),est_D(pb))
 
 	# Now, extract angle parameters.
 
 	speed_lognormal = LognormalStroke(D,t_0,mu,sigma,None,None) # No angle information *yet*.
 
 	def fraction_done(pt):
+		if pt.role==1:
+			return 0
+		elif pt.role==5:
+			return 1
 		return speed_lognormal.fraction_done(pt.time)
 	
 	# Get theta-speed from p2 and p4.
