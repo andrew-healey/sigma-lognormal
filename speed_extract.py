@@ -154,11 +154,13 @@ def extract_sigma_lognormal(point_combo,points):
 	def est_t_0(pt):
 		return pt.time - exp_mu * calc_a(pt)
 	
+	should_average = True
+
 	def decide(a,b):
-		# Just use the first estimate.
-		#return a
-		# Average the two estimates.
-		return (a+b)/2
+		if should_average:
+			return (a+b)/2
+		else:
+			return a
 	
 	t_0 = decide(est_t_0(pa),est_t_0(pb))
 
@@ -175,11 +177,14 @@ def extract_sigma_lognormal(point_combo,points):
 
 	speed_lognormal = LognormalStroke(D,t_0,mu,sigma,None,None) # No angle information *yet*.
 
+	should_hardcode = True
+
 	def fraction_done(pt):
-		if pt.role==1:
-			return 0
-		elif pt.role==5:
-			return 1
+		if should_hardcode:
+			if pt.role==1:
+				return 0
+			elif pt.role==5:
+				return 1
 		return speed_lognormal.fraction_done(pt.time)
 	
 	# Get theta-speed from p2 and p4.
@@ -196,6 +201,8 @@ def extract_sigma_lognormal(point_combo,points):
 
 	return lognormal
 
+run_limits = False
+
 def get_stroke_combos(stroke_candidate):
 	p1=stroke_candidate[0]
 	p2s=stroke_candidate[1]
@@ -203,11 +210,72 @@ def get_stroke_combos(stroke_candidate):
 	p4s=stroke_candidate[3]
 	p5=stroke_candidate[4]
 
+	# If a subset of p2s and p4s is *more valid*, use that subset.
+	# Otherwise, use the whole set.
+	def select_valid(pts):
+		valid_pts = [pt for pt in pts if inflection_point_is_valid(p3,pt)]
+		if len(valid_pts)>0:
+			print("Some points valid:",len(valid_pts),"of",len(pts))
+			return valid_pts
+		return pts
+	
+	if run_limits:
+		p2s = select_valid(p2s)
+		p4s = select_valid(p4s)
+
 	ret = []
 	for p2 in p2s:
 		for p4 in p4s:
 			ret.append([p1,p2,p3,p4,p5])
 	
+	return ret
+
+class TrapezoidZone:
+	def __init__(self,y_min,y_max,xt1,xt2,xb1,xb2):
+		left_slope = (y_max-y_min)/(xt1-xb1)
+		right_slope = (y_max-y_min)/(xt2-xb2)
+
+		self.left_slope = left_slope
+		self.left_pt = [xb1,y_min]
+
+		self.right_slope = right_slope
+		self.right_pt = [xb2,y_min]
+
+		self.y_min = y_min
+		self.y_max = y_max
+	def contains(self,x,y):
+		if y<self.y_min or y>self.y_max:
+			#print("Out of bounds:",y,self.y_min,self.y_max)
+			return False
+
+		left_bound = self.left_slope * (x-self.left_pt[0]) + self.left_pt[1]
+		right_bound = self.right_slope * (x-self.right_pt[0]) + self.right_pt[1]
+
+		#print("Left:",left_bound,"Right:",right_bound,"Y:",y,"X:",x)
+
+		return left_bound >= y and right_bound <= y
+
+# Delta t is in milliseconds.
+valid_traps = [
+	TrapezoidZone(.44,.54,-75,-30,-140,-50),
+	TrapezoidZone(.66,.74,50,130,25,60)
+]
+
+# Little tests.
+
+assert valid_traps[1].contains(70,.73)
+
+# Determines if a p2 or p4 point falls within expected human muscle ranges.
+# Input type Point, Point
+# Output type boolean
+def inflection_point_is_valid(p3,pb):
+	# pb is p2 or p4.
+	delta_t = pb.time - p3.time
+	speed_ratio = pb.speed/p3.speed
+
+	ret = any([trap.contains(delta_t,speed_ratio) for trap in valid_traps])
+	#print("valid:",ret,"delta_t: "+str(delta_t), "speed_ratio: "+str(speed_ratio))
+
 	return ret
 
 def is_valid(lognormal):
@@ -224,6 +292,10 @@ def is_valid(lognormal):
 		return False
 	return True
 
+# Should I try all possible angle comos *with* all possible {p2,p3,p4} speed combos?
+# Or, should I get the best speed-matching speed combo, then try all possible angle combos?
+angle_duo_combinations = True
+
 # Input type Signal
 # Output type LognormalStroke[]
 def extract_all_lognormals(signal):
@@ -237,10 +309,28 @@ def extract_all_lognormals(signal):
 		pairs = point_combos[candidate_idx] # Point[2][n]
 		strokes = stroke_combos[candidate_idx] # Point[5][n]
 
-		for pair in pairs:
+		if angle_duo_combinations:
+			for pair in pairs:
+				for stroke in strokes:
+					lognormal = extract_sigma_lognormal(pair,stroke)
+					if is_valid(lognormal):
+						lognormals.append(lognormal)
+		else:
+			demo_stroke = strokes[0]
+			speed_candidates = [(pair,extract_sigma_lognormal(pair,demo_stroke)) for pair in pairs]
+			speed_candidates = [(pair,lognormal) for pair,lognormal in speed_candidates if is_valid(lognormal)]
+			speed_candidates = [(pair,lognormal,get_speed_mse(lognormal,signal)) for pair,lognormal in speed_candidates]
+			speed_candidates.sort(key=lambda x:x[2])
+			best_pair = speed_candidates[0][0]
+
 			for stroke in strokes:
-				lognormal = extract_sigma_lognormal(pair,stroke)
+				lognormal = extract_sigma_lognormal(best_pair,stroke)
 				if is_valid(lognormal):
 					lognormals.append(lognormal)
 	
 	return lognormals
+
+def get_speed_mse(lognormal,signal):
+	stroke_speed = lognormal.signal(signal.time).speed
+	target_speed = signal.speed
+	return np.mean((stroke_speed-target_speed)**2)
