@@ -317,19 +317,23 @@ angle_duo_combinations = False
 # When I've picked a *best* speed {p2,p3,p4} combo, should I pick the best {p2,p4} speed combo for angles? Or just try all combos for angles?
 pick_best_inflections = False
 
+# If I see a stroke with a small max. speed, should I discard it?
+use_speed_threshold = True
+
 # Input type Signal
 # Output type LognormalStroke[]
 def extract_all_lognormals(signal,peak_height_threshold=0):
 	stroke_candidates = mark_stroke_candidates(signal) # StrokePoints[n]
 
-	fast_stroke_candidates = [candidate for candidate in stroke_candidates if candidate[2].speed>=peak_height_threshold]
+	if use_speed_threshold:
+		stroke_candidates = [candidate for candidate in stroke_candidates if candidate[2].speed>=peak_height_threshold]
 
-	point_combos = [get_point_combos(candidate) for candidate in fast_stroke_candidates] # Point[2][n]
-	stroke_combos = [get_stroke_combos(candidate) for candidate in fast_stroke_candidates] # Point[5][n]
+	point_combos = [get_point_combos(candidate) for candidate in stroke_candidates] # Point[2][n]
+	stroke_combos = [get_stroke_combos(candidate) for candidate in stroke_candidates] # Point[5][n]
 
 	lognormals = []
 
-	for candidate_idx in range(len(fast_stroke_candidates)):
+	for candidate_idx in range(len(stroke_candidates)):
 		pairs = point_combos[candidate_idx] # Point[2][n]
 		strokes = stroke_combos[candidate_idx] # Point[5][n]
 

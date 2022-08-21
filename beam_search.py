@@ -10,6 +10,13 @@ from tqdm import tqdm
 
 min_ratio = 15
 
+# Should the target strokes try to improve the match with *velocity*, or just speed?
+# Or, should the target strokes try to match with *speed*?
+should_match_velocity = True
+
+# Should the 1/15th cutoff be relative to *current* speed max, or *original* speed max?
+use_global_speed_threshold = False
+
 class BeamSearch:
 	def __init__(self,signal,beam_width,snr_threshold,max_strokes):
 		self.signal=signal
@@ -50,8 +57,14 @@ class BeamSearch:
 	def get_children(self,action_plan):
 		leftover_signal = self.subtract_from_signal(action_plan)
 
+		if use_global_speed_threshold:
+			speed_threshold = self.speed_threshold
+		else:
+			max_speed = np.max(leftover_signal.speed)
+			speed_threshold = max_speed / min_ratio
+
 		# Get stroke candidates.
-		all_lognormals = extract_all_lognormals(leftover_signal,self.speed_threshold)
+		all_lognormals = extract_all_lognormals(leftover_signal,speed_threshold)
 
 		child_plans = [
 			ActionPlan([*action_plan.strokes,stroke],action_plan.start_point) for stroke in all_lognormals
@@ -64,10 +77,14 @@ class BeamSearch:
 		if action_plan in self.snr_cache:
 			return self.snr_cache[action_plan]
 		
-		subtracted = self.subtract_from_signal(action_plan)
-
 		square_speed = np.square(self.signal.speed)
-		square_speed_subtracted = np.square(subtracted.speed)
+
+		if should_match_velocity:
+			subtracted = self.subtract_from_signal(action_plan)
+			square_speed_subtracted = np.square(subtracted.speed)
+		else:
+			plan_signal = action_plan.signal(self.signal.time)
+			square_speed_subtracted = np.square(self.signal.speed - plan_signal.speed)
 
 		ms_speed = np.mean(square_speed)
 		ms_speed_subtracted = np.mean(square_speed_subtracted)
