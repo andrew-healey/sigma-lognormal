@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import butter, lfilter, freqz, filtfilt
+from scipy.signal import butter, lfilter, freqz, filtfilt,savgol_filter
 import matplotlib.pyplot as plt
 
 
@@ -12,8 +12,13 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
     y = filtfilt(b, a, data)
     return y
 
-cutoff_freq=15
-order=4
+use_butter = True
+
+cutoff_freq=20
+order=3
+
+N_window = 3
+window = 2*N_window+1
 
 from math import pi
 
@@ -24,5 +29,13 @@ def low_pass_pre(sequence,hz):
     length=sequence.shape[0]
     return np.concatenate((filtered.reshape((length,1)),sequence[:,1].reshape((length,1))),axis=1)
 
-def low_pass(sequence,hz):
+def butter_filt(sequence,hz):
   return butter_lowpass_filter(sequence,cutoff=cutoff_freq,fs=hz,order=order)
+
+# TODO - remove delay on this by using filtfilt
+def savgol_filt(sequence,hz):
+	temp_out = savgol_filter(sequence,window_length=window,polyorder=3,deriv=0)
+	delay = N_window
+
+
+low_pass = butter_filt if use_butter else savgol_filt

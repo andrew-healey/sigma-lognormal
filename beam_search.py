@@ -6,6 +6,10 @@ from speed_extract import extract_all_lognormals
 
 from timer import timer
 
+from tqdm import tqdm
+
+min_ratio = 15
+
 class BeamSearch:
 	def __init__(self,signal,beam_width,snr_threshold,max_strokes):
 		self.signal=signal
@@ -14,7 +18,9 @@ class BeamSearch:
 		self.max_strokes=max_strokes
 		self.subtract_cache = {}
 		self.snr_cache={}
-	
+		
+		max_speed = np.max(self.signal.speed)
+		self.speed_threshold = max_speed / min_ratio
 	
 	# Input type ActionPlan
 	# Output type Signal
@@ -45,7 +51,7 @@ class BeamSearch:
 		leftover_signal = self.subtract_from_signal(action_plan)
 
 		# Get stroke candidates.
-		all_lognormals = extract_all_lognormals(leftover_signal)
+		all_lognormals = extract_all_lognormals(leftover_signal,self.speed_threshold)
 
 		child_plans = [
 			ActionPlan([*action_plan.strokes,stroke],action_plan.start_point) for stroke in all_lognormals
@@ -100,15 +106,20 @@ class BeamSearch:
 			ActionPlan([],self.signal.position[0])
 		]
 
-		num_strokes = 0
-		while True:
+		best_snr = []
+
+		for stroke_idx in tqdm(range(self.max_strokes)):
 			perf_timer = timer()
 			new_plans = self.get_next_action_plans(plans)
-			num_strokes+=1
-			print("Max. SNR:",self.snr(new_plans[0]))
-			print("Num. strokes:",num_strokes)
+			num_strokes = stroke_idx + 1
+
+			best_snr.append(self.snr(new_plans[0]))
+
+			#print("Max. SNR:",best_snr[-1])
+			#print("Num. strokes:",num_strokes)
+
 			if self.should_stop(plans,new_plans):
-				return new_plans[0]
+				return new_plans[0],best_snr
 			plans = new_plans
 
 			# Clear all old SNR cache entries.

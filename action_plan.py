@@ -14,3 +14,5 @@ class ActionPlan:
 		for lognormal_signal in lognormal_signals:
 			full_signal += lognormal_signal
 		return full_signal
+	def sub_plan(self,num_strokes):
+		return ActionPlan(self.strokes[:num_strokes],self.start_point)

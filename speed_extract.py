@@ -1,6 +1,12 @@
 import numpy as np
 np.seterr(all="ignore")
 
+from util import l2
+
+# Should p_3 have speed of speed(t_3), or match the max. speed of the stroke?
+use_real_max = False
+real_max_range = 5 # frames. Equal to 30 ms, aka less than any valid p2/p4 delta t.
+
 class Point:
 	def __init__(self,idx,signal,role):
 		self.role=role
@@ -9,7 +15,13 @@ class Point:
 		self.position=signal.position[idx]
 		self.time=signal.time[idx]
 		self.angle=signal.angle[idx]
-		self.speed=signal.speed[idx]
+
+		if role == 3 and use_real_max:
+			rough_speed = l2(signal.velocity)
+			speed_window = rough_speed[idx-real_max_range:idx+real_max_range]
+			self.speed = np.max(speed_window)
+		else:
+			self.speed=signal.speed[idx]
 
 		self.idx=idx
 	def __str__(self) -> str:
@@ -108,8 +120,6 @@ def get_point_combos(stroke_candidate):
 
 from lognormal import LognormalStroke
 
-
-# There's some mysterious bug in this code.
 def extract_sigma_lognormal(point_combo,points):
 	pa,pb = point_combo
 	p1,p2,p3,p4,p5 = points
@@ -154,15 +164,22 @@ def extract_sigma_lognormal(point_combo,points):
 	def est_t_0(pt):
 		return pt.time - exp_mu * calc_a(pt)
 	
-	should_average = True
+	how_to_combine = "prefer_p3"
 
-	def decide(a,b):
-		if should_average:
-			return (a+b)/2
-		else:
-			return a
+	# Given a computation and two points, decide how to combine the computation between them.
+	def decide(func,a=pa,b=pb):
+		if how_to_combine=="prefer_p3":
+			if a.role==3:
+				return func(a)
+			elif b.role==3:
+				return func(b)
+
+		if how_to_combine=="first":
+			return func(a)
+		# Default is to average.
+		return (func(a)+func(b))/2
 	
-	t_0 = decide(est_t_0(pa),est_t_0(pb))
+	t_0 = decide(est_t_0)
 
 	def delta(pt):
 		return pt.time - t_0
@@ -171,7 +188,7 @@ def extract_sigma_lognormal(point_combo,points):
 		exponent = (( np.log(delta(pt)) - mu )**2) / (2*sigma_sq)
 		return pt.speed * sigma*np.sqrt(2*np.pi)*delta(pt) * np.exp( exponent )
 	
-	D=decide(est_D(pa),est_D(pb))
+	D=decide(est_D)
 
 	# Now, extract angle parameters.
 
@@ -201,6 +218,7 @@ def extract_sigma_lognormal(point_combo,points):
 
 	return lognormal
 
+# Should I use trapezoids to regulate p2 and p4 point candidates?
 run_limits = False
 
 def get_stroke_combos(stroke_candidate):
@@ -294,18 +312,24 @@ def is_valid(lognormal):
 
 # Should I try all possible angle comos *with* all possible {p2,p3,p4} speed combos?
 # Or, should I get the best speed-matching speed combo, then try all possible angle combos?
-angle_duo_combinations = True
+angle_duo_combinations = False
+
+# When I've picked a *best* speed {p2,p3,p4} combo, should I pick the best {p2,p4} speed combo for angles? Or just try all combos for angles?
+pick_best_inflections = False
 
 # Input type Signal
 # Output type LognormalStroke[]
-def extract_all_lognormals(signal):
+def extract_all_lognormals(signal,peak_height_threshold=0):
 	stroke_candidates = mark_stroke_candidates(signal) # StrokePoints[n]
-	point_combos = [get_point_combos(candidate) for candidate in stroke_candidates] # Point[2][n]
-	stroke_combos = [get_stroke_combos(candidate) for candidate in stroke_candidates] # Point[5][n]
+
+	fast_stroke_candidates = [candidate for candidate in stroke_candidates if candidate[2].speed>=peak_height_threshold]
+
+	point_combos = [get_point_combos(candidate) for candidate in fast_stroke_candidates] # Point[2][n]
+	stroke_combos = [get_stroke_combos(candidate) for candidate in fast_stroke_candidates] # Point[5][n]
 
 	lognormals = []
 
-	for candidate_idx in range(len(stroke_candidates)):
+	for candidate_idx in range(len(fast_stroke_candidates)):
 		pairs = point_combos[candidate_idx] # Point[2][n]
 		strokes = stroke_combos[candidate_idx] # Point[5][n]
 
@@ -317,20 +341,46 @@ def extract_all_lognormals(signal):
 						lognormals.append(lognormal)
 		else:
 			demo_stroke = strokes[0]
+			p1=demo_stroke[0]
+			p5=demo_stroke[4]
+
 			speed_candidates = [(pair,extract_sigma_lognormal(pair,demo_stroke)) for pair in pairs]
 			speed_candidates = [(pair,lognormal) for pair,lognormal in speed_candidates if is_valid(lognormal)]
-			speed_candidates = [(pair,lognormal,get_speed_mse(lognormal,signal)) for pair,lognormal in speed_candidates]
+			speed_candidates = [(pair,lognormal,get_speed_mse(lognormal,signal,p1,p5)) for pair,lognormal in speed_candidates]
 			speed_candidates.sort(key=lambda x:x[2])
 			best_pair = speed_candidates[0][0]
 
-			for stroke in strokes:
+			if pick_best_inflections:
+				p2_p4_combos = [point_combo for point_combo in pairs if point_combo[0].role==2 and point_combo[1].role==4]
+				best_p2_p4 = p2_p4_combos[0]
+
+				stroke = [
+					demo_stroke[0],
+					best_p2_p4[0],
+					demo_stroke[2],
+					best_p2_p4[1],
+					demo_stroke[4]
+				]
+
 				lognormal = extract_sigma_lognormal(best_pair,stroke)
 				if is_valid(lognormal):
 					lognormals.append(lognormal)
+
+			else:
+				for stroke in strokes:
+					lognormal = extract_sigma_lognormal(best_pair,stroke)
+					if is_valid(lognormal):
+						lognormals.append(lognormal)
 	
 	return lognormals
 
-def get_speed_mse(lognormal,signal):
+# Should competing {p2,p3,p4} speed combos be tested *locally* or *globally*?
+compare_speed_globally = False
+
+def get_speed_mse(lognormal,signal,p1,p5):
 	stroke_speed = lognormal.signal(signal.time).speed
 	target_speed = signal.speed
-	return np.mean((stroke_speed-target_speed)**2)
+	squared_err = (stroke_speed-target_speed)**2
+	if not compare_speed_globally:
+		squared_err = squared_err[p1.idx:p5.idx]
+	return np.mean(squared_err)

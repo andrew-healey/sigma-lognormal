@@ -25,19 +25,19 @@ def smooth(sequence,window=10):
 
 padding=50 # 50 ms
 def pad(locs):
-    first=locs[0]
-    last=locs[-1]
-    
-    
-    front_times=np.arange(round_to_period(first[-1:]-padding),first[-1:],period)[:,np.newaxis]
-    front_vals=np.repeat(first[np.newaxis,:-1],len(front_times),axis=0)
-    print(front_times.shape,front_vals.shape)
-    front_padding=np.append(front_vals,front_times,axis=1)
-    back_times=np.arange(round_to_period(last[np.newaxis,-1:]+padding),last[-1:],period)[:,np.newaxis]
-    back_vals=np.repeat(last[np.newaxis,:-1],len(back_times),axis=0)
-    back_padding=np.append(back_vals,back_times,axis=1)
-    
-    return np.concatenate((front_padding,locs,back_padding))
+		first=locs[0]
+		last=locs[-1]
+
+		front_times=np.arange(round_to_period(first[-1:]-padding),first[-1:],period)[:,np.newaxis]
+		front_vals=np.repeat(first[np.newaxis,:-1],len(front_times),axis=0)
+		front_padding=np.append(front_vals,front_times,axis=1)
+
+		back_times=period + np.arange(last[-1:],round_to_period(last[np.newaxis,-1:]+padding),period)[:,np.newaxis]
+		back_vals=np.repeat(last[np.newaxis,:-1],len(back_times),axis=0)
+		back_padding=np.append(back_vals,back_times,axis=1)
+
+		ret = np.concatenate((front_padding,locs,back_padding))
+		return ret
 
 def diff(sequence):
     mult=np.array([1]).repeat(sequence.shape[1])
@@ -69,13 +69,15 @@ from signals import Signal
 def preprocess(locs):
 	resampled = resample(locs)
 	smoothed=smooth(resampled)
-	#padded=pad(smoothed)
+	padded=pad(smoothed)
 
-	raw_vel=diff(smoothed)
+	which_locs = padded
+
+	raw_vel=diff(which_locs)
 
 	speed=l2(raw_vel)
 	smooth_speed=low_pass_pre(speed,hz)
 
 	smooth_angle=get_angle(raw_vel)
 
-	return Signal(smoothed[:,:2],raw_vel[:,:2],smooth_angle,smooth_speed[:,0],smoothed[:,2])
+	return Signal(which_locs[:,:2],raw_vel[:,:2],smooth_angle,smooth_speed[:,0],which_locs[:,2])
