@@ -19,9 +19,14 @@ def resample(locs):
 from scipy.signal import savgol_filter
 
 def smooth(sequence,window=10):
-    loc_data=sequence[:,:-1]
-    smooth_data=savgol_filter(loc_data,window,3,axis=0)
-    return np.concatenate((smooth_data,sequence[:,-1:]),axis=1)
+		try:
+			loc_data=sequence[:,:-1]
+			smooth_data=savgol_filter(loc_data,window,3,axis=0)
+			return np.concatenate((smooth_data,sequence[:,-1:]),axis=1)
+		except(ValueError):
+			# If mode is 'interp', window_length must be less than or equal to the size of x.
+			print("Warning: window too large for savgol_filter. Using original data.")
+			return sequence
 
 padding=50 # 50 ms
 def pad(locs):

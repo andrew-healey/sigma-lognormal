@@ -101,11 +101,9 @@ def get_point_combos(stroke_candidate):
 
 	# Possible combos: p2, p3; p2, p4; p3, p4
 
-	p1=stroke_candidate[0]
 	p2s=stroke_candidate[1]
 	p3=stroke_candidate[2]
 	p4s=stroke_candidate[3]
-	p5=stroke_candidate[4]
 
 	for p2 in p2s:
 		ret.append([p2,p3])
@@ -219,7 +217,7 @@ def extract_sigma_lognormal(point_combo,points):
 	return lognormal
 
 # Should I use trapezoids to regulate p2 and p4 point candidates?
-run_limits = False
+run_limits = True
 
 def get_stroke_combos(stroke_candidate):
 	p1=stroke_candidate[0]
@@ -233,7 +231,6 @@ def get_stroke_combos(stroke_candidate):
 	def select_valid(pts):
 		valid_pts = [pt for pt in pts if inflection_point_is_valid(p3,pt)]
 		if len(valid_pts)>0:
-			print("Some points valid:",len(valid_pts),"of",len(pts))
 			return valid_pts
 		return pts
 	

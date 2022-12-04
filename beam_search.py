@@ -145,7 +145,6 @@ class BeamSearch:
 				if len(cached_snr.strokes) < num_strokes - 1:
 					del self.snr_cache[cached_snr] 
 			
-
 			# Clear old subtract cache entries.
 			for cached_subtract in self.subtract_cache:
 				cached_strokes = len(cached_subtract.strokes)

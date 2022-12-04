@@ -39,7 +39,7 @@ class LognormalStroke:
 		x=speed*np.cos(angle)
 		y=speed*np.sin(angle)
 
-		return np.concatenate((x.reshape((x.shape[0],1)),y.reshape((y.shape[0],1))),axis=1)
+		return np.concatenate((x[...,np.newaxis],y[...,np.newaxis]),axis=-1)
 
 	def position(self,time):
 		multiplier = self.D / (self.theta_f - self.theta_s)
@@ -48,7 +48,7 @@ class LognormalStroke:
 		x=np.sin(angle) - np.sin(self.theta_s)
 		y=-np.cos(angle)+np.cos(self.theta_s)
 
-		combined=np.concatenate((x.reshape((x.shape[0],1)),y.reshape((y.shape[0],1))),axis=1)
+		combined=np.concatenate((x[...,np.newaxis],y[...,np.newaxis]),axis=-1)
 
 		return multiplier*combined
 
