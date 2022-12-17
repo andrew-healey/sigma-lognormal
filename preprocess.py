@@ -28,6 +28,9 @@ def smooth(sequence,window=10):
 			print("Warning: window too large for savgol_filter. Using original data.")
 			return sequence
 
+def relu(x):
+	return np.maximum(0,x)
+
 padding=50 # 50 ms
 def pad(locs):
 		first=locs[0]
@@ -61,9 +64,9 @@ def l2(sequence):
 from low_pass import low_pass_pre
 
 def get_angle(vels):
-	smoother_vels=smooth(vels,window=30)
+	#smoother_vels=low_pass(vels,window=30)
 
-	raw_angle=np.arctan2(smoother_vels[:,1],smoother_vels[:,0])
+	raw_angle=np.arctan2(vels[:,1],vels[:,0])
 	delta_angle=raw_angle[1:]-raw_angle[:-1]
 	smooth_delta=(delta_angle+np.pi)%(2*np.pi)-np.pi
 	smooth_angle=np.cumsum( np.concatenate((raw_angle[:1],smooth_delta)))

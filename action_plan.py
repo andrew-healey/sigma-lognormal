@@ -1,5 +1,6 @@
 import numpy as np
 from signals import Signal
+from lognormal import LognormalStroke
 
 class ActionPlan:
 	def __init__(self,strokes,start_point):
@@ -16,3 +17,14 @@ class ActionPlan:
 		return full_signal
 	def sub_plan(self,num_strokes):
 		return ActionPlan(self.strokes[:num_strokes],self.start_point)
+	def to_json(self):
+		return {
+			"strokes":[stroke.to_json() for stroke in self.strokes],
+			"start_point":self.start_point.tolist()
+		}
+	@staticmethod
+	def from_json(json):
+		return ActionPlan(
+			[LognormalStroke.from_json(stroke_json) for stroke_json in json["strokes"]],
+			np.array(json["start_point"])
+		)

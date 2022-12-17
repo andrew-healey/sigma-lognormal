@@ -1,14 +1,14 @@
-from preprocess import get_angle,hz
+from preprocess import get_angle,hz,relu
 from util import l2
 from low_pass import low_pass
 import numpy as np
 
 class Signal:
-	position = np.array([])
-	velocity = np.array([])
-	time = np.array([])
-	angle=np.array([])
-	speed=np.array([])
+	# position = np.array([])
+	# velocity = np.array([])
+	# time = np.array([])
+	# angle=np.array([])
+	# speed=np.array([])
 	name=None
 
 	def __init__(self,position,velocity,angle,speed,time):
@@ -20,11 +20,12 @@ class Signal:
 			self.angle = angle
 		else:
 			self.angle=get_angle(self.velocity)
+			# TODO check if this needs smoothing
 		
 		if speed is not None:
 			self.speed = speed
 		else:
-			self.speed = low_pass(l2(self.velocity),hz)
+			self.speed = relu(low_pass(l2(self.velocity),hz))
 	
 	def __mul__(self,scalar):
 		position = self.position*scalar
@@ -44,7 +45,13 @@ class Signal:
 			velocity = self.velocity+other.velocity
 			time = self.time
 
-			return Signal(position,velocity,None,None,time)
+			angle=None
+			speed=None
+			if self.angle.shape == () and other.angle.shape == ():
+				angle = self.angle
+				speed = self.speed+other.speed
+
+			return Signal(position,velocity,angle,speed,time)
 		elif(isinstance(other,int) or isinstance(other,float) or isinstance(other,np.ndarray) and other.shape==()):
 			# Add constant position offset to signal.
 			position = self.position+other

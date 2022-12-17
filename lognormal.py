@@ -62,4 +62,17 @@ class LognormalStroke:
 	
 	def __str__(self) -> str:
 		return "LognormalStroke(D={},t_0={},mu={},sigma={},theta_s={},theta_f={})".format(self.D,self.t_0,self.mu,self.sigma,self.theta_s,self.theta_f)
+	
+	def to_json(self):
+		return {
+			"D":float(self.D),
+			"t_0":float(self.t_0),
+			"mu":float(self.mu),
+			"sigma":float(self.sigma),
+			"theta_s":float(self.theta_s),
+			"theta_f":float(self.theta_f)
+		}
+	@staticmethod
+	def from_json(json):
+		return LognormalStroke(json["D"],json["t_0"],json["mu"],json["sigma"],json["theta_s"],json["theta_f"])
 

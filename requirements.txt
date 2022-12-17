@@ -3,3 +3,4 @@ scipy==1.8.0
 pyflame
 ipympl
 ffmpeg-python
+torch
