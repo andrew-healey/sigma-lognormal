@@ -60,6 +60,9 @@ class LognormalStroke:
 
 		return Signal(position,velocity,angle,speed,time)
 	
+	def time_of_max_speed(self):
+		return self.t_0 + np.exp(self.mu - self.sigma**2)
+	
 	def __str__(self) -> str:
 		return "LognormalStroke(D={},t_0={},mu={},sigma={},theta_s={},theta_f={})".format(self.D,self.t_0,self.mu,self.sigma,self.theta_s,self.theta_f)
 	

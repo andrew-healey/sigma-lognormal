@@ -1,6 +1,7 @@
 tqdm
-scipy==1.8.0
+scipy
 pyflame
 ipympl
 ffmpeg-python
 torch
+matplotlib

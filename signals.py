@@ -52,16 +52,21 @@ class Signal:
 				speed = self.speed+other.speed
 
 			return Signal(position,velocity,angle,speed,time)
-		elif(isinstance(other,int) or isinstance(other,float) or isinstance(other,np.ndarray) and other.shape==()):
+		elif(isinstance(other,int) or isinstance(other,float) or isinstance(other,np.ndarray) and other.shape==(2,)):
 			# Add constant position offset to signal.
 			position = self.position+other
 			return Signal(position,self.velocity,self.angle,self.speed,self.time)
 		else:
+			print(other.shape)
 			raise TypeError("Cannot add Signal and "+str(type(other)))
+
+	def find_closest_time(self,time):
+		delta_time = self.time-time
+		return np.argmin(np.abs(delta_time))
 	
 	def __sub__(self,other):
 		return self + other*(-1)
-
+	
 	def __getitem__(self,val):
 		assert isinstance(val,slice)
 		position = self.position[val]

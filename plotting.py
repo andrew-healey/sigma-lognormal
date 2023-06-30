@@ -10,19 +10,19 @@ plotters = {
 	"angles": lambda signal: (signal.time[1:], signal.angle)
 }
 
-def show_plot(plot_type,signals,should_scatter=True):
+def show_plot(plot_type,signals,should_scatter=True,**kwargs):
 	for signal in signals:
 		x,y = plotters[plot_type](signal)
 		if should_scatter:
-			plt.scatter(x,y)
+			plt.scatter(x,y,**kwargs)
 		else:
-			plt.plot(x,y)
+			plt.plot(x,y,**kwargs)
 	plt.show()
 
 import matplotlib.animation
 from IPython.display import HTML
 
-def animate_plot(plot_type,signals):
+def animate_plot(plot_type,signals,title=None,x_label=None,y_label=None,legend=None):
 	sequences = [plotters[plot_type](signal) for signal in signals] # list of (x,y) tuples
 	all_xs,all_ys = zip(*sequences) # list of x lists, list of y lists
 
@@ -32,7 +32,13 @@ def animate_plot(plot_type,signals):
 
 	fig, ax = plt.subplots()
 	ax.axis([*x_bounds,*y_bounds])
+
+	if title is not None: ax.set_title(title)
+	if x_label is not None: ax.set_xlabel(x_label)
+	if y_label is not None: ax.set_ylabel(y_label)
+
 	lines = [ax.plot([],[])[0] for _ in signals]
+	if legend is not None: ax.legend(legend)
 	plt.close(fig) # I'll manually render this with HTML. Hide the default output.
 
 	def animate(i):

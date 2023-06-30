@@ -30,7 +30,10 @@ def low_pass_pre(sequence,hz):
     return np.concatenate((filtered.reshape((length,1)),sequence[:,1].reshape((length,1))),axis=1)
 
 def butter_filt(sequence,hz):
-  return butter_lowpass_filter(sequence,cutoff=cutoff_freq,fs=hz,order=order)
+  try:
+    return butter_lowpass_filter(sequence,cutoff=cutoff_freq,fs=hz,order=order)
+  except ValueError:
+    return sequence
 
 # TODO - remove delay on this by using filtfilt
 def savgol_filt(sequence,hz):
