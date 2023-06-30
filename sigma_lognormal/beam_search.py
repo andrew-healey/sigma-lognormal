@@ -1,10 +1,10 @@
 import numpy as np
-from signals import Signal
-from action_plan import ActionPlan
+from sigma_lognormal.signals import Signal
+from sigma_lognormal.action_plan import ActionPlan
 
-from speed_extract import extract_all_lognormals
+from sigma_lognormal.speed_extract import extract_all_lognormals
 
-from timer import timer
+from .timer import timer
 
 from tqdm import tqdm
 

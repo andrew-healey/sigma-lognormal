@@ -1,4 +1,4 @@
-from signals import Signal
+from sigma_lognormal.signals import Signal
 import numpy as np
 from scipy import special
 

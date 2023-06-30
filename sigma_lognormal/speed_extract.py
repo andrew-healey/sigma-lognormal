@@ -1,7 +1,7 @@
 import numpy as np
 np.seterr(all="ignore")
 
-from util import l2
+from sigma_lognormal.util import l2
 
 # Should p_3 have speed of speed(t_3), or match the max. speed of the stroke?
 use_real_max = False
@@ -32,7 +32,7 @@ def sign(num):
 	return 1 if num>0 else (0 if num==0 else -1)
 import re
 
-from util import diff
+from sigma_lognormal.util import diff
 
 def mark_stroke_candidates(signal):
 
@@ -116,7 +116,7 @@ def get_point_combos(stroke_candidate):
 
 	return ret
 
-from lognormal import LognormalStroke
+from sigma_lognormal.lognormal import LognormalStroke
 
 def extract_sigma_lognormal(point_combo,points):
 	pa,pb = point_combo

@@ -1,6 +1,6 @@
 import torch
 from pt_lognormal import LognormalDiffStroke
-from action_plan import ActionPlan
+from sigma_lognormal.action_plan import ActionPlan
 from pt_action_plan import DiffActionPlan
 
 

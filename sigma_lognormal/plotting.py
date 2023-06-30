@@ -49,6 +49,6 @@ def animate_plot(plot_type,signals,title=None,x_label=None,y_label=None,legend=N
 	ani = matplotlib.animation.FuncAnimation(fig, animate, frames=max_length,blit=True)
 
 	writergif = matplotlib.animation.PillowWriter(fps=30) 
-	ani.save("plot.gif", writer=writergif)
+	ani.save("images/plot.gif", writer=writergif)
 
 	return HTML(ani.to_jshtml())

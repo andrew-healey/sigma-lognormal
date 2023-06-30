@@ -1,8 +1,8 @@
 import torch
 from torch import nn
 from pytorch.pt_lognormal import LognormalDiffStroke
-from signals import Signal
-from action_plan import ActionPlan
+from sigma_lognormal.signals import Signal
+from sigma_lognormal.action_plan import ActionPlan
 
 class DiffActionPlan(nn.Module):
 	def __init__(self,action_plan):

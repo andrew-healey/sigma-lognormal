@@ -1,6 +1,6 @@
-from preprocess import get_angle,hz,relu
-from util import l2
-from low_pass import low_pass
+from sigma_lognormal.preprocess import get_angle,hz,relu
+from sigma_lognormal.util import l2
+from sigma_lognormal.low_pass import low_pass
 import numpy as np
 
 class Signal:

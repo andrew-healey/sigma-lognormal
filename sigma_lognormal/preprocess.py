@@ -61,7 +61,7 @@ def l2(sequence):
     mag=np.sqrt(sequence[:,0]**2+sequence[:,1]**2)
     return np.concatenate((mag.reshape((length,1)),sequence[:,2].reshape((length,1))),axis=1)
 
-from low_pass import low_pass_pre
+from sigma_lognormal.low_pass import low_pass_pre
 
 def get_angle(vels):
 	#smoother_vels=low_pass(vels,window=30)
@@ -72,7 +72,7 @@ def get_angle(vels):
 	smooth_angle=np.cumsum( np.concatenate((raw_angle[:1],smooth_delta)))
 	return smooth_angle
 
-from signals import Signal
+from sigma_lognormal.signals import Signal
 
 def preprocess(locs):
 	resampled = resample(locs)

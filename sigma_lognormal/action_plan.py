@@ -1,6 +1,6 @@
 import numpy as np
-from signals import Signal
-from lognormal import LognormalStroke
+from sigma_lognormal.signals import Signal
+from sigma_lognormal.lognormal import LognormalStroke
 
 class ActionPlan:
 	def __init__(self,strokes,start_point):

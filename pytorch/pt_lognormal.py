@@ -1,8 +1,8 @@
-from signals import Signal
+from sigma_lognormal.signals import Signal
 import torch
 from torch import nn
 import math
-from lognormal import LognormalStroke
+from sigma_lognormal.lognormal import LognormalStroke
 
 class LognormalDiffStroke(nn.Module):
 	def __init__(self,stroke):
