@@ -13,7 +13,9 @@ This repository implements a "sigma lognormal handstroke extractor" for human ha
 You can find the papers on which this implementation is based in the `papers` folder, along with annotations and derivations of my formulas.
 
 Example of the extractor in action:
-<img src="images/clean-signature.gif"/>
+<img src="images/plot.gif"/>
+
+<img src="images/handstrokes.png">
 
 # Usage
 
