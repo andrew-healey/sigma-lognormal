@@ -2,9 +2,9 @@
 
 This project is the first public implementation of the [sigma-lognormal model](https://ieeexplore.ieee.org/document/7333769) described by Daniel Martín-Albo.
 
-The "sigma-lognormal model" is a mathematical model which accurately and elegantly describes human handwriting.
+The sigma-lognormal model is a mathematical model which accurately and elegantly describes human handwriting.
 
-It posits that handwriting and mouse movements are composed of a series of a few simple handstrokes, which are simple circular arcs with the following speed profile:
+It posits that handwriting and mouse movements are composed of a series of a few overlapping handstrokes, which are simple circular arcs with the following speed profile:
 
 ![image](https://github.com/andrew-healey/sigma-lognormal/assets/26335275/c4fa55c9-3b50-4638-8005-da551c9072b5)
 
