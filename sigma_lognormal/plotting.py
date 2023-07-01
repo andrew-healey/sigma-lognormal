@@ -10,13 +10,15 @@ plotters = {
 	"angles": lambda signal: (signal.time[1:], signal.angle)
 }
 
-def show_plot(plot_type,signals,should_scatter=True,**kwargs):
+def show_plot(plot_type,signals,should_scatter=True,legend=None,**kwargs):
 	for signal in signals:
 		x,y = plotters[plot_type](signal)
 		if should_scatter:
 			plt.scatter(x,y,**kwargs)
 		else:
 			plt.plot(x,y,**kwargs)
+	if legend is not None:
+		plt.legend(legend)
 	plt.show()
 
 import matplotlib.animation

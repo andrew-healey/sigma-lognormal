@@ -3,6 +3,10 @@ from sigma_lognormal.util import l2
 from sigma_lognormal.low_pass import low_pass
 import numpy as np
 
+"""
+A signal is a 2D trajectory with a list of positions, velocities, angles, speeds, and times.
+The Signal class allows easy manipulation (i.e. addition, multiplication, etc.) of signals.
+"""
 class Signal:
 	# position = np.array([])
 	# velocity = np.array([])

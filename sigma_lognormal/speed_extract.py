@@ -2,13 +2,20 @@ import numpy as np
 np.seterr(all="ignore")
 
 from sigma_lognormal.util import l2
+from sigma_lognormal.signals import Signal
 
 # Should p_3 have speed of speed(t_3), or match the max. speed of the stroke?
 use_real_max = False
 real_max_range = 5 # frames. Equal to 30 ms, aka less than any valid p2/p4 delta t.
 
+"""
+A Point has some properties of a Signal, but only at a single point in time.
+The lognormal parameter extractor uses Points to extract parameters.
+
+It also has a role--a Point can be a p1 (local min), p2 (inflection point), p3 (local max), or p5 (local min).
+"""
 class Point:
-	def __init__(self,idx,signal,role):
+	def __init__(self,idx:int,signal:Signal,role:int):
 		self.role=role
 		
 		self.velocity=signal.velocity[idx]
@@ -34,7 +41,12 @@ import re
 
 from sigma_lognormal.util import diff
 
-def mark_stroke_candidates(signal):
+"""
+In a given signal, identify points of interest. These make a sequence of "high", "low", and "flip" points.
+Then select all occurrences of ["low","flip","high","flip","low"] in the sequence.
+Return a [p1,p2s,p3,p4s,p5] list for each of these.
+"""
+def mark_stroke_candidates(signal:Signal) -> list[list[Point|list[Point]]]:
 
 	speed_seq=signal.speed
 
@@ -70,7 +82,7 @@ def mark_stroke_candidates(signal):
 	# Indexes in the high-flip-low string.
 	stroke_idxes=[m.start() for m in re.finditer('lf+hf+(?=l)', lookup_str)]
 
-	def get_points(stroke_idx,points):
+	def get_points(stroke_idx:int,points:list[(int,str)])->list[Point|list[Point]]:
 
 		one=points[stroke_idx]
 		three_idx=stroke_idx+lookup_str[stroke_idx:].find("h")
@@ -81,7 +93,6 @@ def mark_stroke_candidates(signal):
 		five=points[five_idx]
 		
 
-		# type StrokePoints = [Point, Point[], Point, Point[], Point]
 		points=[
 			Point(one[0],signal,1),
 			[Point(two[0],signal,2) for two in twos],
@@ -91,12 +102,12 @@ def mark_stroke_candidates(signal):
 		]
 		return points
 		
-	# Return type StrokePoints[]
 	return [get_points(stroke_idx,points) for stroke_idx in stroke_idxes]
 
-# Input type StrokePoints
-# Output type Point[2][]
-def get_point_combos(stroke_candidate):
+"""
+Given a [p1,p2s,p3,p4s,p5] list, return of all possible [p2,p3], [p3,p4] and [p2,p4] combos.
+"""
+def get_point_combos(stroke_candidate:list[Point|list[Point]])->list[list[Point]]:
 	ret = []
 
 	# Possible combos: p2, p3; p2, p4; p3, p4
@@ -118,7 +129,13 @@ def get_point_combos(stroke_candidate):
 
 from sigma_lognormal.lognormal import LognormalStroke
 
-def extract_sigma_lognormal(point_combo,points):
+"""
+Given a [p1,p2,p3,p4,p5] list, return a LognormalStroke.
+
+This is mostly just ugly math.
+It's explained in the paper and I don't want to explain it, sorry.
+"""
+def extract_sigma_lognormal(point_combo:list[Point],points:list[Point]) -> LognormalStroke:
 	pa,pb = point_combo
 	p1,p2,p3,p4,p5 = points
 
@@ -219,7 +236,11 @@ def extract_sigma_lognormal(point_combo,points):
 # Should I use trapezoids to regulate p2 and p4 point candidates?
 run_limits = True
 
-def get_stroke_combos(stroke_candidate):
+
+"""
+Convert a [p1,p2s,p3,p4s,p5] into a list of [p1,p2,p3,p4,p5], where p2 and p4 are selected from the p2s and p4s lists.
+"""
+def get_stroke_combos(stroke_candidate:list[Point|list[Point]])->list[list[Point]]:
 	p1=stroke_candidate[0]
 	p2s=stroke_candidate[1]
 	p3=stroke_candidate[2]
@@ -245,6 +266,10 @@ def get_stroke_combos(stroke_candidate):
 	
 	return ret
 
+"""
+Some logic for checking whether a point is in a trapezoid.
+I use this to check whether a proposed handstroke falls within humanlike limits.
+"""
 class TrapezoidZone:
 	def __init__(self,y_min,y_max,xt1,xt2,xb1,xb2):
 		left_slope = (y_max-y_min)/(xt1-xb1)
@@ -270,20 +295,17 @@ class TrapezoidZone:
 
 		return left_bound >= y and right_bound <= y
 
+# These values are taken from the paper.
 # Delta t is in milliseconds.
 valid_traps = [
 	TrapezoidZone(.44,.54,-75,-30,-140,-50),
 	TrapezoidZone(.66,.74,50,130,25,60)
 ]
 
-# Little tests.
-
 assert valid_traps[1].contains(70,.73)
 
 # Determines if a p2 or p4 point falls within expected human muscle ranges.
-# Input type Point, Point
-# Output type boolean
-def inflection_point_is_valid(p3,pb):
+def inflection_point_is_valid(p3:Point,pb:Point)->bool:
 	# pb is p2 or p4.
 	delta_t = pb.time - p3.time
 	speed_ratio = pb.speed/p3.speed
@@ -293,7 +315,7 @@ def inflection_point_is_valid(p3,pb):
 
 	return ret
 
-def is_valid(lognormal):
+def is_valid(lognormal:LognormalStroke)->bool:
 	if lognormal is None:
 		return False
 	if any([not np.isfinite(param) for param in [
@@ -317,9 +339,16 @@ pick_best_inflections = False
 # If I see a stroke with a small max. speed, should I discard it?
 use_speed_threshold = True
 
-# Input type Signal
-# Output type LognormalStroke[]
-def extract_all_lognormals(signal,peak_height_threshold=0):
+"""
+Given a signal, return a list of all possible lognormal strokes in that signal.
+A simplified overview:
+
+First, generate a list of every [p1,p2s,p3,p4s,p5] in the signal.
+Then it makes a bunch of [p1,p2,p3,p4,p5] combos from those (along with some point-pairs that will be used for calculations).
+For every combo and point-pair, it generates a candidate lognormal stroke.
+Then it picks the best few strokes from the candidates, and returns them.
+"""
+def extract_all_lognormals(signal:Signal,peak_height_threshold:float=0)->list[LognormalStroke]:
 	stroke_candidates = mark_stroke_candidates(signal) # StrokePoints[n]
 
 	if use_speed_threshold:
@@ -378,6 +407,7 @@ def extract_all_lognormals(signal,peak_height_threshold=0):
 # Should competing {p2,p3,p4} speed combos be tested *locally* or *globally*?
 compare_speed_globally = False
 
+# Calculates mean squared error between a lognormal stroke's speed and the signal's speed.
 def get_speed_mse(lognormal,signal,p1,p5):
 	stroke_speed = lognormal.signal(signal.time).speed
 	target_speed = signal.speed

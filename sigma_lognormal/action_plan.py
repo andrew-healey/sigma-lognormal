@@ -2,6 +2,10 @@ import numpy as np
 from sigma_lognormal.signals import Signal
 from sigma_lognormal.lognormal import LognormalStroke
 
+"""
+An action plan is a sequence of handstrokes.
+It can be evaluated by using .signal(timesteps).
+"""
 class ActionPlan:
 	def __init__(self,strokes,start_point):
 		self.strokes=strokes
